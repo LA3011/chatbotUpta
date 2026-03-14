@@ -18,7 +18,7 @@ export class ChatComponent implements OnInit {
 
   // Propiedades para la configuración de la URL
   showConfig: boolean = false;
-  apiUrl: string = 'https://tu-api-siaagro.onrender.com/ask'; // URL por defecto
+  apiUrl: string = 'https://luisalvarez123-siaagro.hf.space/query'; // URL por defecto
 
   constructor(
     private chatService: ChatService,
