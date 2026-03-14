@@ -30,7 +30,7 @@ export class ChatService {
       'Content-Type': 'application/json'
     });
 
-    this.http.post<{ reply: string }>(`${API_URL+'/ask'}`, { message: text }, { headers })
+    this.http.post<{ reply: string }>(`${API_URL}`, { message: text }, { headers })
       .subscribe({
         next: (res) => {
           const botMsg: IMessage = {
