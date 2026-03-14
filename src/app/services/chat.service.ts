@@ -8,8 +8,7 @@ import { IMessage } from '../Interfaces/imessage';
 })
 export class ChatService {
 
-  // private readonly API_URL = 'https://heavy-laws-lay.loca.lt/ask';
-
+  // URL de tu Space en Hugging Face
   private messageArray: IMessage[] = [];
   private conversation = new Subject<IMessage[]>();
 
@@ -19,38 +18,44 @@ export class ChatService {
     return this.conversation.asObservable();
   }
 
-  sendMessage(text: string, API_URL: string) {
+  sendMessage(text: string, HF_API_URL: string) {
+    // 1. Agregar mensaje del usuario a la UI
     const userMsg: IMessage = { text, sender: 'user', timestamp: new Date() };
     this.messageArray.push(userMsg);
     this.conversation.next([...this.messageArray]);
 
-    // CONFIGURACIÓN DE CABECERAS PARA LOCAL-TUNNEL
+    // 2. Configuración de headers limpia
     const headers = new HttpHeaders({
-      'Bypass-Tunnel-Reminder': 'true',
       'Content-Type': 'application/json'
     });
 
-    this.http.post<{ reply: string }>(`${API_URL}`, { message: text }, { headers })
-      .subscribe({
-        next: (res) => {
-          const botMsg: IMessage = {
-            text: res.reply,
-            sender: 'bot',
-            timestamp: new Date()
-          };
-          this.messageArray.push(botMsg);
-          this.conversation.next([...this.messageArray]);
-        },
-        error: (err) => {
-          console.error('Error detallado:', err);
-          const errorMsg: IMessage = {
-            text: 'Error de conexión.',
-            sender: 'bot',
-            timestamp: new Date()
-          };
-          this.messageArray.push(errorMsg);
-          this.conversation.next([...this.messageArray]);
-        }
-      });
+    // 3. Petición a Hugging Face
+    // Ajustamos la interfaz de respuesta a lo que configuramos en Python: { intent: string, response: string }
+    this.http.post<{ intent: string, response: string }>(
+      HF_API_URL, 
+      { query: text }, // Cambiado de 'message' a 'query'
+      { headers }
+    )
+    .subscribe({
+      next: (res) => {
+        const botMsg: IMessage = {
+          text: res.response, // Cambiado de 'reply' a 'response'
+          sender: 'bot',
+          timestamp: new Date()
+        };
+        this.messageArray.push(botMsg);
+        this.conversation.next([...this.messageArray]);
+      },
+      error: (err) => {
+        console.error('Error en SIA-AGRO API:', err);
+        const errorMsg: IMessage = {
+          text: 'Lo siento, hubo un problema al conectar con el servidor de SIA-AGRO.',
+          sender: 'bot',
+          timestamp: new Date()
+        };
+        this.messageArray.push(errorMsg);
+        this.conversation.next([...this.messageArray]);
+      }
+    });
   }
 }
